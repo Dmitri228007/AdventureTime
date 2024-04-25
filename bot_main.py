@@ -1,70 +1,98 @@
 from tokens import tg_bot_token as bot_token
-from telegram._update import Update
-from telegram.ext._callbackcontext import CallbackContext
-from telegram.ext import Application, MessageHandler, filters, CommandHandler, Updater
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import CallbackContext, Application, MessageHandler, filters, CommandHandler, Updater, \
+    ConversationHandler
 from tokens import map_static_api_token as static_token
-import requests
 import maps
-import os
+
+MAIN, REVIEW, MARKS = [1, False], [2, False], [3, False]
+LOCAL_DATA = dict()
+add_review = []
+add_marks = []
 
 
-async def help_command(update: Update, context: CallbackContext):  # помощь пользователю
+async def start(update: Update, context: CallbackContext):
+    global LOCAL_DATA
+    user_ifo = update.effective_user
+    if not ('USERINFO' in LOCAL_DATA.keys()):
+        LOCAL_DATA['USERINFO'] = user_ifo
     with open('help.txt', encoding='utf-8') as file:
         await update.message.reply_text(''.join(file.readlines()))
+        return ConversationHandler.END
 
 
-async def registration_(update: Update, context: CallbackContext):  # регистрация почты пользователя
-    await update.message.reply_text('введите свою почту для того чтобы вам приходили туда ваши купленные билеты')
+async def review(update: Update, context: CallbackContext):
+    global add_review
+    global LOCAL_DATA
+    if not REVIEW[1]:
+        with open('review.txt', encoding='utf-8') as file:
+            await update.message.reply_text(''.join(file.readlines()))
+    user_text = update.message.text
+    if not ('REVIEW' in LOCAL_DATA.keys()):
+        LOCAL_DATA['REVIEW'] = []
+    if '#Отзыв' in user_text:
+        REVIEW[1] = False
+        add_local_data = LOCAL_DATA['REVIEW']
+        add_local_data.append(context.user_data['review'])
+        LOCAL_DATA['REVIEW'] = add_local_data
+        add_review = []
+        return ConversationHandler.END
+    else:
+        REVIEW[1] = True
+        try:
+            add_review.append(user_text)
+            context.user_data['review'] = add_review
+        except KeyError:
+            context.user_data['review'] = user_text
+        return REVIEW[0]
 
 
-async def registration_form(update: Update, context: CallbackContext):  # регистрация почты пользователя
-    print(update.message.text)
-    # await update.message.reply_text(f'{context.args}')
+async def marks(update: Update, context: CallbackContext):
+    global add_marks
+    global LOCAL_DATA
+    if not MARKS[1]:
+        with open('marks.txt', encoding='utf-8') as file:
+            await update.message.reply_text(''.join(file.readlines()))
+    user_text = update.message.text
+    if not ('MARKS' in LOCAL_DATA.keys()):
+        LOCAL_DATA['MARKS'] = []
+    if '#Заметки' in user_text:
+        MARKS[1] = False
+        add_local_data = LOCAL_DATA['MARKS']
+        add_local_data.append(context.user_data['marks'])
+        LOCAL_DATA['MARKS'] = add_local_data
+        add_marks = []
+        return ConversationHandler.END
+    else:
+        MARKS[1] = True
+        try:
+            add_marks.append(user_text)
+            context.user_data['marks'] = add_marks
+        except KeyError:
+            context.user_data['marks'] = user_text
+        return MARKS[0]
 
 
-async def choose_city(update: Update, context: CallbackContext):  # выбор города для путешествия
-    func_args = context.args
-    city = str(func_args[0])
-    chat_id = update.message.chat_id
-    cord = maps.coord(static_token, city)
+async def choose_city(update: Update, context: CallbackContext):
+    cord = maps.coord(static_token, str(context.args[0]))
     map_request = f"http://static-maps.yandex.ru/1.x/?ll={cord[0]},{cord[1]}&spn=0.09,0.09&l=map"
-    await context.bot.send_photo(chat_id=chat_id, photo=map_request)
-
-
-async def look_at_attractions(update: Update, context: CallbackContext):  # просмотр достопремичательностей
-    await update.message.reply_text('command')
-
-
-async def look_at_hotels(update: Update, context: CallbackContext):  # просмотр отелей
-    await update.message.reply_text('command')
-
-
-async def look_at_tickets(update: Update, context: CallbackContext):  # поиск билетов до города
-    await update.message.reply_text('command')
-
-
-async def book_hotel(update: Update, context: CallbackContext):  # бронирование билетов
-    await update.message.reply_text('command')
-
-
-async def buy_ticket(update: Update, context: CallbackContext):  # покупка билетов до города
-    await update.message.reply_text('command')
+    await context.bot.send_photo(chat_id=update.message.chat_id, photo=map_request)
 
 
 def main():
     application = Application.builder().token(bot_token).build()
-    application.add_handler(CommandHandler("help", help_command))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, registration_form))
-    application.add_handler(CommandHandler("reg", registration_))
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler('marks', marks), CommandHandler('review', review)],
+        states={
+            REVIEW[0]: [MessageHandler(filters.TEXT, review)],
+            MARKS[0]: [MessageHandler(filters.TEXT, marks)]
+        }, fallbacks=[CommandHandler('start', start)])
+    application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("city", choose_city))
-    application.add_handler(CommandHandler("attractions", look_at_attractions))
-    application.add_handler(CommandHandler("hotels", look_at_hotels))
-    application.add_handler(CommandHandler("tickets", look_at_tickets))
-    application.add_handler(CommandHandler("book_hotel", book_hotel))
-    application.add_handler(CommandHandler("buy_ticket", buy_ticket))
-
+    application.add_handler(conv_handler)
     application.run_polling()
 
 
 if __name__ == '__main__':
     main()
+    print(LOCAL_DATA)

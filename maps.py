@@ -1,5 +1,4 @@
 import requests
-from tokens import map_static_api_token as map_token
 
 
 def coord(token, place):
