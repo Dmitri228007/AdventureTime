@@ -1,5 +1,5 @@
 from tokens import tg_bot_token as bot_token
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import CallbackContext, Application, MessageHandler, filters, CommandHandler, Updater, \
     ConversationHandler
 from tokens import map_static_api_token as static_token
@@ -17,8 +17,11 @@ async def start(update: Update, context: CallbackContext):
     if not ('USERINFO' in LOCAL_DATA.keys()):
         LOCAL_DATA['USERINFO'] = user_ifo
     with open('help.txt', encoding='utf-8') as file:
-        await update.message.reply_text(''.join(file.readlines()))
-        return ConversationHandler.END
+        reply_keyboard = [['/review', 'marks']]
+        markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=False)
+
+        await update.message.reply_text(''.join(file.readlines()), reply_markup=markup)
+    return ConversationHandler.END
 
 
 async def review(update: Update, context: CallbackContext):
@@ -26,7 +29,7 @@ async def review(update: Update, context: CallbackContext):
     global LOCAL_DATA
     if not REVIEW[1]:
         with open('review.txt', encoding='utf-8') as file:
-            await update.message.reply_text(''.join(file.readlines()))
+            await update.message.reply_text(''.join(file.readlines()), reply_markup=ReplyKeyboardRemove())
     user_text = update.message.text
     if not ('REVIEW' in LOCAL_DATA.keys()):
         LOCAL_DATA['REVIEW'] = []
@@ -52,7 +55,7 @@ async def marks(update: Update, context: CallbackContext):
     global LOCAL_DATA
     if not MARKS[1]:
         with open('marks.txt', encoding='utf-8') as file:
-            await update.message.reply_text(''.join(file.readlines()))
+            await update.message.reply_text(''.join(file.readlines()), reply_markup=ReplyKeyboardRemove())
     user_text = update.message.text
     if not ('MARKS' in LOCAL_DATA.keys()):
         LOCAL_DATA['MARKS'] = []
