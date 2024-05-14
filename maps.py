@@ -20,4 +20,4 @@ def __place(token, place, lg='ru_RU', num=10):
 
 
 if __name__ == '__main__':
-    print(__place('633870d0-426c-43c5-96ee-be30e550827e', 'Банк, Самара'))
+    print(__place('633870d0-426c-43c5-96ee-be30e550827e', 'Достопремичательности Николаевка'))
