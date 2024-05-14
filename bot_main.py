@@ -92,18 +92,23 @@ async def choose_city(update: Update, context: CallbackContext):
         cord = maps.coord(static_token, str(CITY[2]['selected city']))
         map_request = f"http://static-maps.yandex.ru/1.x/?ll={cord[0]},{cord[1]}&spn=0.09,0.09&l=map"
         await context.bot.send_photo(chat_id=update.message.chat_id, photo=map_request)
-        reply_keyboard = [[KeyboardButton('Посмотреть отели'), KeyboardButton('Посмотреть достопримечательности')],
+        reply_keyboard = [[KeyboardButton('Посмотреть отели'), KeyboardButton('Посмотреть достопримечательности'),
+                           KeyboardButton('Посмотреть обменники')],
                           [KeyboardButton('Узнать цены на билеты')],
                           [KeyboardButton('Другой город'), KeyboardButton('В главное меню')]]
         markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
         await update.message.reply_text('Что будем планировать?', reply_markup=markup)
         return CITY[0]
     elif update.message.text == 'Посмотреть отели':
-        print(question_info(f'''{CITY[2]['selected city']}Отели'''))
+        await update.message.reply_text(question_info(f'''{CITY[2]['selected city']}Отели'''))
         return CITY[0]
 
     elif update.message.text == 'Посмотреть достопримечательности':
-        print('Посмотреть достопримечательности')
+        await update.message.reply_text(question_info(f'''Достопремичательности, {CITY[2]['selected city']}'''))
+        return CITY[0]
+
+    elif update.message.text == 'Посмотреть обменники':
+        await update.message.reply_text(question_info(f'''{CITY[2]['selected city']}, обменники'''))
         return CITY[0]
 
     elif update.message.text == 'Узнать цены на билеты':

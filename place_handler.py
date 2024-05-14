@@ -8,12 +8,18 @@ def get_hotels(jsn):
     for phones in jsn['properties']['CompanyMetaData']['Phones']:
         if phones['type'] == 'phone':
             phone += f'''{phones['formatted']}\n\t\t'''
-    answer += (
-        f'''название отеля: {jsn['properties']['name']}\n\tадрес: {jsn['properties']['description']}
-    сайт: {jsn['properties']['CompanyMetaData']['url']}
-    часы работы: {jsn['properties']['CompanyMetaData']['Hours']['text']}
-    телефоны: {phone}''')
-    # print(answer)
+    try:
+        hours = jsn['properties']['CompanyMetaData']['Hours']['text']
+        answer += (
+            f'''название отеля: {jsn['properties']['name']}\n\tадрес: {jsn['properties']['description']}
+        сайт: {jsn['properties']['CompanyMetaData']['url']}
+        часы работы: {jsn['properties']['CompanyMetaData']['Hours']['text']}
+        телефоны: {phone}''')
+    except KeyError:
+        answer += (
+            f'''название отеля: {jsn['properties']['name']}\n\tадрес: {jsn['properties']['description']}
+                сайт: {jsn['properties']['CompanyMetaData']['url']}
+                телефоны: {phone}''')
     return answer
 
 
@@ -37,15 +43,22 @@ def get_exchange(jsn):
     for phones in jsn['properties']['CompanyMetaData']['Phones']:
         if phones['type'] == 'phone':
             phone += f'''{phones['formatted']}\n\t\t'''
-    answer += (
-        f'''Обменник: {jsn['properties']['name']}\n\tадрес: {jsn['properties']['description']}
-    сайт: {jsn['properties']['CompanyMetaData']['url']}
-    часы работы: {jsn['properties']['CompanyMetaData']['Hours']['text']}
-    телефоны: {phone}''')
+    try:
+        hours = jsn['properties']['CompanyMetaData']['Hours']['text']
+        answer += (
+            f'''Обменник: {jsn['properties']['name']}\n\tадрес: {jsn['properties']['description']}
+            сайт: {jsn['properties']['CompanyMetaData']['url']}
+            часы работы: {hours}
+            телефоны: {phone}''')
+    except KeyError:
+        answer += (
+            f'''Обменник: {jsn['properties']['name']}\n\tадрес: {jsn['properties']['description']}
+                    сайт: {jsn['properties']['CompanyMetaData']['url']}
+                    телефоны: {phone}''')
     return answer
 
 
-def question_info(response, num=10):
+def question_info(response, num=5):
     land = ''
     bank = ''
     hotels = ''
@@ -57,7 +70,7 @@ def question_info(response, num=10):
                 hotels += get_hotels(p)
             elif _['class'] == 'landmark':  # достопремечательности
                 land += get_landmark(p)
-            elif _['class'] == 'currency exchange':  # Обмен валюты
+            elif _['class'] == 'currency exchange' or _['class'] == 'banks':  # Обмен валюты
                 bank += get_exchange(p)
     if land:
         answer += land
